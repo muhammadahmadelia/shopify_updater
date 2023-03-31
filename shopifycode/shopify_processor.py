@@ -467,7 +467,7 @@ class Shopify_Processor:
         return updation_flag
     
     # get new adjusted quantity with respect to new qunatity
-    def get_adjusted_inventory_level(self, new_quantity: int, old_quantity: int):
+    def get_adjusted_inventory_level(self, new_quantity: int, old_quantity: int) -> int:
         adjusted_qunatity = 0
         try:
             while (int(old_quantity) + int(adjusted_qunatity)) != int(new_quantity):
