@@ -63,86 +63,110 @@ class Utils:
     # get original text from template
     def get_original_text(self, template: str, brand: Brand, product: Product) -> str:
         try:
-            if '{Brand.Name}' in template: template = str(template).replace('{Brand.Name}', str(brand.name).strip().title()).strip()
-            elif '{BRAND.NAME}' in template: template = str(template).replace('{BRAND.NAME}', str(brand.name).strip().upper()).strip()
-            elif '{brand.name}' in template: template = str(template).replace('{brand.name}', str(brand.name).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Number}' in template: template = str(template).replace('{Product.Number}', str(product.number).strip().title()).strip()
-            elif '{PRODUCT.NUMBER}' in template: template = str(template).replace('{PRODUCT.NUMBER}', str(product.number).strip().upper()).strip()
-            elif '{product.number}' in template: template = str(template).replace('{product.number}', str(product.number).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-            
-            if str(product.name).strip(): 
-                if '{Product.Name}' in template: template = str(template).replace('{Product.Name}', str(product.name).strip().title())
-                elif '{PRODUCT.NAME}' in template: template = str(template).replace('{PRODUCT.NAME}', str(product.name).strip().upper())
-                elif '{product.name}' in template: template = str(template).replace('{product.name}', str(product.name).strip().lower())
-            else: 
-                if '{Product.Name}' in template: template = str(template).replace('{Product.Name}', '')
-                elif '{PRODUCT.NAME}' in template: template = str(template).replace('{PRODUCT.NAME}', '')
-                elif '{product.name}' in template: template = str(template).replace('{product.name}', '')
-            template = str(template).replace('  ', ' ').strip()
-            
-            if '{Product.Frame_Code}' in template: template = str(template).replace('{Product.Frame_Code}', str(product.frame_code).strip().upper()).strip()
-            elif '{PRODUCT.FRAME_CODE}' in template: template = str(template).replace('{PRODUCT.FRAME_CODE}', str(product.frame_code).strip().upper()).strip()
-            elif '{product.frame_code}' in template: template = str(template).replace('{product.frame_code}', str(product.frame_code).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Frame_Color}' in template: template = str(template).replace('{Product.Frame_Color}', str(product.metafields.frame_color).strip().title()).strip()
-            elif '{PRODUCT.FRAME_COLOR}' in template: template = str(template).replace('{PRODUCT.FRAME_COLOR}', str(product.metafields.frame_color).strip().upper()).strip()
-            elif '{product.frame_color}' in template: template = str(template).replace('{product.frame_color}', str(product.metafields.frame_color).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Lens_Code}' in template: template = str(template).replace('{Product.Lens_Code}', str(product.lens_code).strip().title()).strip()
-            elif '{PRODUCT.LENS_CODE}' in template: template = str(template).replace('{PRODUCT.LENS_CODE}', str(product.lens_code).strip().upper()).strip()
-            elif '{product.lens_code}' in template: template = str(template).replace('{product.lens_code}', str(product.lens_code).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Lens_Color}' in template: template = str(template).replace('{Product.Lens_Color}', str(product.metafields.lens_color).strip().title()).strip()
-            elif '{PRODUCT.LENS_COLOR}' in template: template = str(template).replace('{PRODUCT.LENS_COLOR}', str(product.metafields.lens_color).strip().upper()).strip()
-            elif '{product.lens_color}' in template: template = str(template).replace('{product.lens_color}', str(product.metafields.lens_color).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Type}' in template: template = str(template).replace('{Product.Type}', str(product.type).strip().title()).strip()
-            elif '{PRODUCT.TYPE}' in template: template = str(template).replace('{PRODUCT.TYPE}', str(product.type).strip().upper()).strip()
-            elif '{product.type}' in template: template = str(template).replace('{product.type}', str(product.type).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{brand.name}', brand.name, template)
+            # if '{Brand.Name}' in template: template = str(template).replace('{Brand.Name}', str(brand.name).strip().title()).strip()
+            # elif '{BRAND.NAME}' in template: template = str(template).replace('{BRAND.NAME}', str(brand.name).strip().upper()).strip()
+            # elif '{brand.name}' in template: template = str(template).replace('{brand.name}', str(brand.name).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.number}', product.number, template)
+            # if '{Product.Number}' in template: template = str(template).replace('{Product.Number}', str(product.number).strip().title()).strip()
+            # elif '{PRODUCT.NUMBER}' in template: template = str(template).replace('{PRODUCT.NUMBER}', str(product.number).strip().upper()).strip()
+            # elif '{product.number}' in template: template = str(template).replace('{product.number}', str(product.number).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.name}', product.name, template)
+            # if str(product.name).strip(): 
+            #     if '{Product.Name}' in template: template = str(template).replace('{Product.Name}', str(product.name).strip().title())
+            #     elif '{PRODUCT.NAME}' in template: template = str(template).replace('{PRODUCT.NAME}', str(product.name).strip().upper())
+            #     elif '{product.name}' in template: template = str(template).replace('{product.name}', str(product.name).strip().lower())
+            # else: 
+            #     if '{Product.Name}' in template: template = str(template).replace('{Product.Name}', '')
+            #     elif '{PRODUCT.NAME}' in template: template = str(template).replace('{PRODUCT.NAME}', '')
+            #     elif '{product.name}' in template: template = str(template).replace('{product.name}', '')
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.frame_code}', product.frame_code, template)
+            # if '{Product.Frame_Code}' in template: template = str(template).replace('{Product.Frame_Code}', str(product.frame_code).strip().upper()).strip()
+            # elif '{PRODUCT.FRAME_CODE}' in template: template = str(template).replace('{PRODUCT.FRAME_CODE}', str(product.frame_code).strip().upper()).strip()
+            # elif '{product.frame_code}' in template: template = str(template).replace('{product.frame_code}', str(product.frame_code).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.frame_color}', product.metafields.frame_color, template)
+            # if '{Product.Frame_Color}' in template: template = str(template).replace('{Product.Frame_Color}', str(product.metafields.frame_color).strip().title()).strip()
+            # elif '{PRODUCT.FRAME_COLOR}' in template: template = str(template).replace('{PRODUCT.FRAME_COLOR}', str(product.metafields.frame_color).strip().upper()).strip()
+            # elif '{product.frame_color}' in template: template = str(template).replace('{product.frame_color}', str(product.metafields.frame_color).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.lens_code}', product.lens_code, template)
+            # if '{Product.Lens_Code}' in template: template = str(template).replace('{Product.Lens_Code}', str(product.lens_code).strip().title()).strip()
+            # elif '{PRODUCT.LENS_CODE}' in template: template = str(template).replace('{PRODUCT.LENS_CODE}', str(product.lens_code).strip().upper()).strip()
+            # elif '{product.lens_code}' in template: template = str(template).replace('{product.lens_code}', str(product.lens_code).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.lens_color}', product.metafields.lens_color, template)
+            # if '{Product.Lens_Color}' in template: template = str(template).replace('{Product.Lens_Color}', str(product.metafields.lens_color).strip().title()).strip()
+            # elif '{PRODUCT.LENS_COLOR}' in template: template = str(template).replace('{PRODUCT.LENS_COLOR}', str(product.metafields.lens_color).strip().upper()).strip()
+            # elif '{product.lens_color}' in template: template = str(template).replace('{product.lens_color}', str(product.metafields.lens_color).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.type}', product.type, template)
+            # if '{Product.Type}' in template: template = str(template).replace('{Product.Type}', str(product.type).strip().title()).strip()
+            # elif '{PRODUCT.TYPE}' in template: template = str(template).replace('{PRODUCT.TYPE}', str(product.type).strip().upper()).strip()
+            # elif '{product.type}' in template: template = str(template).replace('{product.type}', str(product.type).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
 
             # Metafields
-            if '{Product.Metafields.For_Who}' in template: 
-                if 'unisex' in str(product.metafields.for_who).strip().lower(): template = str(template).replace('{Product.Metafields.For_Who}', 'MEN and WOMEN').strip()
-                else: template = str(template).replace('{Product.Metafields.For_Who}', str(product.metafields.for_who).strip().title()).strip()
-            elif '{PRODUCT.METAFIELDS.FOR_WHO}' in template:
-                if 'unisex' in str(product.metafields.for_who).strip().lower(): template = str(template).replace('{Product.Metafields.For_Who}', 'Men and Women').strip() 
-                else: template = str(template).replace('{PRODUCT.METAFIELDS.FOR_WHO}', str(product.metafields.for_who).strip().upper()).strip()
-            elif '{product.metafields.for_who}' in template:
-                if 'unisex' in str(product.metafields.for_who).strip().lower(): template = str(template).replace('{Product.Metafields.For_Who}', 'men and women').strip()
-                else: template = str(template).replace('{product.metafields.for_who}', str(product.metafields.for_who).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Metafields.Lens_Material}' in template: template = str(template).replace('{Product.Metafields.Lens_Material}', str(product.metafields.lens_material).strip().title()).strip()
-            elif '{PRODUCT.METAFIELDS.LENS_MATERIAL}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.LENS_MATERIAL}', str(product.metafields.lens_material).strip().upper()).strip()
-            elif '{product.metafields.lens_material}' in template: template = str(template).replace('{product.metafields.lens_material}', str(product.metafields.lens_material).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Metafields.Lens_Technology}' in template: template = str(template).replace('{Product.Metafields.Lens_Technology}', str(product.metafields.lens_technology).strip().title()).strip()
-            elif '{PRODUCT.METAFIELDS.LENS_TECHNOLOGY}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.LENS_TECHNOLOGY}', str(product.metafields.lens_technology).strip().upper()).strip()
-            elif '{product.metafields.lens_technology}' in template: template = str(template).replace('{product.metafields.lens_technology}', str(product.metafields.lens_technology).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-
-            if '{Product.Metafields.Frame_Material}' in template: template = str(template).replace('{Product.Metafields.Frame_Material}', str(product.metafields.frame_material).strip().title()).strip()
-            elif '{PRODUCT.METAFIELDS.FRAME_MATERIAL}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.FRAME_MATERIAL}', str(product.metafields.frame_material).strip().upper()).strip()
-            elif '{product.metafields.frame_material}' in template: template = str(template).replace('{product.metafields.frame_material}', str(product.metafields.frame_material).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
-            
-            if '{Product.Metafields.Frame_Shape}' in template: template = str(template).replace('{Product.Metafields.Frame_Shape}', str(product.metafields.frame_shape).strip().title()).strip()
-            elif '{PRODUCT.METAFIELDS.FRAME_SHAPE}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.FRAME_SHAPE}', str(product.metafields.frame_shape).strip().upper()).strip()
-            elif '{product.metafields.frame_shape}' in template: template = str(template).replace('{product.metafields.frame_shape}', str(product.metafields.frame_shape).strip().lower()).strip()
-            template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.metafields.for_who}', product.metafields.lens_color, template)
+            # if '{Product.Metafields.For_Who}' in template: 
+            #     if 'unisex' in str(product.metafields.for_who).strip().lower(): template = str(template).replace('{Product.Metafields.For_Who}', 'MEN and WOMEN').strip()
+            #     else: template = str(template).replace('{Product.Metafields.For_Who}', str(product.metafields.for_who).strip().title()).strip()
+            # elif '{PRODUCT.METAFIELDS.FOR_WHO}' in template:
+            #     if 'unisex' in str(product.metafields.for_who).strip().lower(): template = str(template).replace('{Product.Metafields.For_Who}', 'Men and Women').strip() 
+            #     else: template = str(template).replace('{PRODUCT.METAFIELDS.FOR_WHO}', str(product.metafields.for_who).strip().upper()).strip()
+            # elif '{product.metafields.for_who}' in template:
+            #     if 'unisex' in str(product.metafields.for_who).strip().lower(): template = str(template).replace('{Product.Metafields.For_Who}', 'men and women').strip()
+            #     else: template = str(template).replace('{product.metafields.for_who}', str(product.metafields.for_who).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.metafields.lens_material}', product.metafields.lens_material, template)
+            # if '{Product.Metafields.Lens_Material}' in template: template = str(template).replace('{Product.Metafields.Lens_Material}', str(product.metafields.lens_material).strip().title()).strip()
+            # elif '{PRODUCT.METAFIELDS.LENS_MATERIAL}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.LENS_MATERIAL}', str(product.metafields.lens_material).strip().upper()).strip()
+            # elif '{product.metafields.lens_material}' in template: template = str(template).replace('{product.metafields.lens_material}', str(product.metafields.lens_material).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.metafields.lens_technology}', product.metafields.lens_technology, template)
+            # if '{Product.Metafields.Lens_Technology}' in template: template = str(template).replace('{Product.Metafields.Lens_Technology}', str(product.metafields.lens_technology).strip().title()).strip()
+            # elif '{PRODUCT.METAFIELDS.LENS_TECHNOLOGY}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.LENS_TECHNOLOGY}', str(product.metafields.lens_technology).strip().upper()).strip()
+            # elif '{product.metafields.lens_technology}' in template: template = str(template).replace('{product.metafields.lens_technology}', str(product.metafields.lens_technology).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.metafields.frame_material}', product.metafields.frame_material, template)
+            # if '{Product.Metafields.Frame_Material}' in template: template = str(template).replace('{Product.Metafields.Frame_Material}', str(product.metafields.frame_material).strip().title()).strip()
+            # elif '{PRODUCT.METAFIELDS.FRAME_MATERIAL}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.FRAME_MATERIAL}', str(product.metafields.frame_material).strip().upper()).strip()
+            # elif '{product.metafields.frame_material}' in template: template = str(template).replace('{product.metafields.frame_material}', str(product.metafields.frame_material).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
+            template = self.check_and_replace_text('{product.metafields.frame_shape}', product.metafields.frame_shape, template)
+            # if '{Product.Metafields.Frame_Shape}' in template: template = str(template).replace('{Product.Metafields.Frame_Shape}', str(product.metafields.frame_shape).strip().title()).strip()
+            # elif '{PRODUCT.METAFIELDS.FRAME_SHAPE}' in template: template = str(template).replace('{PRODUCT.METAFIELDS.FRAME_SHAPE}', str(product.metafields.frame_shape).strip().upper()).strip()
+            # elif '{product.metafields.frame_shape}' in template: template = str(template).replace('{product.metafields.frame_shape}', str(product.metafields.frame_shape).strip().lower()).strip()
+            # template = str(template).replace('  ', ' ').strip()
 
         except Exception as e:
             self.print_logs(f'Exception in get_original_text: {e}')
             if self.DEBUG: print(f'Exception in get_original_text: {e}')
+            else: pass
+        finally: return template
+        
+    def check_and_replace_text(self, text: str, value: str, template: str) -> str:
+        try:
+            if str(text).strip().upper() in template: 
+                if str(text).strip().lower() == '{product.metafields.for_who}' and str(value).strip().lower() == 'unisex':
+                    template = str(template).replace(str(text).strip().upper(), 'MEN and WOMEN')
+                else: template = str(template).replace(str(text).strip().upper(), str(value).strip().upper())
+            elif str(text).strip().title() in template: 
+                if str(text).strip().lower() == '{product.metafields.for_who}' and str(value).strip().lower() == 'unisex':
+                    template = str(template).replace(str(text).strip().title(), 'Men and Women')
+                else: template = str(template).replace(str(text).strip().title(), str(value).strip().title())
+            elif str(text).strip().lower() in template: 
+                if str(text).strip().lower() == '{product.metafields.for_who}' and str(value).strip().lower() == 'unisex':
+                    template = str(template).replace(str(text).strip().lower(), 'men and women')
+                else: template = str(template).replace(str(text).strip().lower(), str(value).strip().lower())
+
+            template = str(template).replace('  ', ' ').strip()
+        except Exception as e:
+            self.print_logs(f'Exception in check_and_replace_text: {e}')
+            if self.DEBUG: print(f'Exception in check_and_replace_text: {e}')
             else: pass
         finally: return template
 
@@ -348,8 +372,16 @@ class Utils:
                             image_attachment = self.download_image(image_360_url)
                             if image_attachment:
                                 # save downloaded image
+                                with open(image_filename, 'wb') as f: f.write(image_attachment)
+                                # open croped image
+                                f = open(image_filename, 'rb')
+                                image_attachment = base64.b64encode(f.read())
+                                f.close()
+                                
                                 json_value = {"image": {"position": index + 1, "attachment": image_attachment.decode('utf-8'), "filename": image_filename, "alt": image_description}}
                                 shopify_processor.set_product_image(product.shopify_id, json_value)
+                                # delete downloaded image
+                                os.remove(image_filename)
                             else: self.print_logs(f'')
         except Exception as e:
             self.print_logs(f'Exception in add_product_360_images: {e}')
@@ -357,16 +389,51 @@ class Utils:
             else: pass
     
     # check spin image tag for product
-    def check_product_spin_tag(self, product_id: str, no_of_images: int, tags: str, shopify_processor: Shopify_Processor):
+    def check_product_spin_tag(self, num_images: int, tags_str: str) -> str:
+        tags = []
         try:
-            if f'spinimages={no_of_images}' not in tags:
-                tags += f', spinimages={no_of_images}'
-                tags = str(tags).strip()
-                shopify_processor.update_product({ "product": { "id": product_id, "tags": tags } })
+            # Split the tags_str into a list of tags
+            tags = tags_str.split(",")
+            
+            # Check if the spinimages tag is already present in the tags list
+            spin_tag_present = any(str(tag).strip().startswith("spinimages=") for tag in tags)
+            
+            if spin_tag_present:
+                exact_spin_tag_present = False
+                for tag in tags:
+                    if f'spinimages={num_images}' == str(tag).strip(): 
+                        exact_spin_tag_present = True
+                        break
+                if not exact_spin_tag_present: tags.append(f'spinimages={num_images}')
+
+                duplicate_tags = []
+                for tag in tags:
+                    if str(tag).strip().startswith('spinimages') and str(tag).strip() != f'spinimages={num_images}':
+                        duplicate_tags.append(tag)
+
+                if duplicate_tags:
+                    tags = [string for string in tags if string not in duplicate_tags]
+            else: tags.append(f'spinimages={num_images}')
+            
+            if tags == tags_str.split(','): tags = []
         except Exception as e:
             self.print_logs(f'Exception in check_product_spin_tag: {e}')
             if self.DEBUG: print(f'Excepption in check_product_spin_tag: {e}')
             else: pass
+        finally: return ",".join(tags)
+    
+    # remove spin tag from tags
+    def remove_spin_tag(self, tags: str):
+        new_tags = []
+        try:
+            for tag in str(tags).split(','):
+                if 'spinimages' not in str(tag).strip().lower():
+                    new_tags.append(str(tag).strip())
+        except Exception as e:
+            self.print_logs(f'Exception in remove_spin_tag: {e}')
+            if self.DEBUG: print(f'Excepption in remove_spin_tag: {e}')
+            else: pass
+        finally: return ', '.join(new_tags)
 
     # add product image to the shopify
     def add_product_image(self, store_name: str, product: Product, image_description: str, shopify_processor: Shopify_Processor) -> None:

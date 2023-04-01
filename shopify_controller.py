@@ -62,10 +62,12 @@ class Controller:
                             shopify_obj = Shopify_Updater(self.DEBUG, self.store, self.config_file, query_processor, self.logs_filename)
                             shopify_obj.update_inventory_controller()
                             self.create_excel_file(shopify_obj)
-                        elif field_to_update == 'Update Product Title and Description':
-                            Shopify_Updater(self.DEBUG, self.store, self.config_file, query_processor, self.logs_filename).update_product_title_and_description()
-                        elif field_to_update == 'Update Product Images':
-                            Shopify_Updater(self.DEBUG, self.store, self.config_file, query_processor, self.logs_filename).update_product_images()
+                        elif field_to_update in ['Update Product Title and Description', 'Update Product Images', 'Update Product Tags']:
+                            Shopify_Updater(self.DEBUG, self.store, self.config_file, query_processor, self.logs_filename).update_product(field_to_update)
+                        # elif field_to_update == 'Update Product Images':
+                        #     Shopify_Updater(self.DEBUG, self.store, self.config_file, query_processor, self.logs_filename).update_product_images()
+                        # elif field_to_update == 'Update Product Tags':
+                        #     Shopify_Updater(self.DEBUG, self.store, self.config_file, query_processor, self.logs_filename).update_product_tags()
                         else:
                             print(field_to_update)
                 else: print('No brand selected to scrape and update') 
@@ -216,7 +218,7 @@ class Controller:
             path = ''
             try:
                 choice = input('Save to sync? : ')
-                if str(choice).strip().lower() in ['y', 'yes']: path = 'C:/Users/muham/Sync/Looker Online/Results/'
+                if str(choice).strip().lower() in ['y', 'yes', '1']: path = 'C:/Users/muham/Sync/Looker Online/Results/'
             except Exception as e: print(f'Exception in create_excel_file input: {e}')
             
             filename = f'{path}{self.store.name} {datetime.now().strftime("%d-%m-%Y")} Results.xlsx'
