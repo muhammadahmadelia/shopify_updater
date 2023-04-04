@@ -354,7 +354,11 @@ class Utils:
                     if image_filename:
                         json_value = {"image": {"position": index + 1, "src": image_360_url, "filename": image_filename, "alt": image_description}}
                         shopify_processor.set_product_image(product.shopify_id, json_value)
-            elif str(store_name).strip().title() == 'Keringeyewear': print('Keringeyewear')
+            elif str(store_name).strip().title() == 'Keringeyewear':
+                for index, image_360_url in enumerate(product.images_360):
+                    image_filename = f"{str(image_description).strip().replace(' ', '_')}.png"
+                    json_value = {"image": {"position": index + 1, "src": image_360_url, "filename": image_filename, "alt": image_description}}
+                    shopify_processor.set_product_image(product.shopify_id, json_value)
             elif str(store_name).strip().title() == 'Rudyproject': print('Rudyproject')
             elif str(store_name).strip().title() == 'Luxottica':
                 for index, image_360_url in enumerate(product.images_360):

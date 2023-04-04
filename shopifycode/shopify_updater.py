@@ -84,7 +84,7 @@ class Shopify_Updater:
                             self.add_new_product(database_product, brand, template_suffix, shopify_processor)
 
                     for shopify_product in shopify_products:
-                        if 'Outlet' not in shopify_product:
+                        if 'Outlet' not in shopify_product['tags']:
                             self.print_logs(f'{shopify_product["title"]} not in database')
                 else: print(f'Failed to get {products_count} products from shopify')
         
