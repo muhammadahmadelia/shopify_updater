@@ -59,5 +59,8 @@ class Brand:
     def products(self, products: list[Product]):
         self.__products = products
 
+    # def extend_products(self, products: list[Product]):
+    #     self.__products.extend(products)
+
     # def empty_products(self):
     #     self.__products = []

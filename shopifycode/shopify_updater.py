@@ -31,11 +31,13 @@ class Shopify_Updater:
             shopify_processor = Shopify_Processor(self.DEBUG, self.config_file, self.logs_filename)
             shopify_processor.get_store_url()
             
-            print(f'Updating product inventory for {str(self.store.name).strip().title()}')
+            print(f'\nUpdating product inventory for {str(self.store.name).strip().title()}')
 
             for brand in self.store.brands:
                 template_suffix = ''
-                print(f'Brand: {brand.name}')
+                print(f'\nBrand: {brand.name}')
+                
+                brand.products = self.query_processor.get_complete_products_by_brand(brand.name)
                 print(f'No. of Products in database: {len(brand.products)}')
 
                 products_count = shopify_processor.get_count_of_products_by_vendor(brand.name)
@@ -101,164 +103,134 @@ class Shopify_Updater:
             shopify_processor = Shopify_Processor(self.DEBUG, self.config_file, self.logs_filename)
             shopify_processor.get_store_url()
             
-            print(f'Updating product title and description for {str(self.store.name).strip().title()}')
+            print(f'\nUpdating product fields for {str(self.store.name).strip().title()}')
 
             for brand in self.store.brands:
-                print(f'Brand: {brand.name}')
-                print(f'No. of Products in database: {len(brand.products)}')
+                for product_type in brand.product_types:
+                    print(f'\nBrand: {brand.name} | Product type: {product_type}')
 
-                products_count = shopify_processor.get_count_of_products_by_vendor(brand.name)
-                print(f'No. of Products in shopify: {products_count}')
+                    brand.products = self.query_processor.get_complete_products_by_brand_and_type(brand.name, product_type)
+                    print(f'No. of Products in database: {len(brand.products)}')
 
-                self.printProgressBar(0, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
-                shopify_products = shopify_processor.get_products_by_vendor(brand.name)
+                    products_count = shopify_processor.get_count_of_products_by_vendor(brand.name, product_type)
+                    print(f'No. of Products in shopify: {products_count}')
 
-                if products_count == len(shopify_products):
-                    for database_product_index, database_product in enumerate(brand.products):
-                        self.printProgressBar(database_product_index + 1, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
+                    shopify_products = shopify_processor.get_products_by_vendor(brand.name, product_type)
 
-                        if database_product.shopify_id:
-                            # get matched product between shopify products nad database product by shopify id
-                            # return type is integer if matched and None if not matched
-                            matched_shopify_product_index = next((i for i, shopify_product in enumerate(shopify_products) if str(database_product.shopify_id) == str(shopify_product['id'])), None)
-                            if matched_shopify_product_index != None:
-                                # pop the matched index product from list of shopify products
-                                matched_shopify_product = shopify_products.pop(matched_shopify_product_index)
-                                # check if Outlet tag is not in shopify product tags
-                                if 'Outlet' not in matched_shopify_product['tags']:
-                                    if field_to_update == 'Update Product Title and Description':
-                                        product_title = self.utils.create_product_title(brand, database_product, self.template_file_path)
-                                        product_description = self.utils.create_product_description(brand, database_product, self.template_file_path)
-                                        update_fields = {}
+                    if products_count == len(shopify_products):
+                        self.printProgressBar(0, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-                                        if str(matched_shopify_product['title']).strip() != product_title:
-                                            update_fields['title'] = product_title
+                        for database_product_index, database_product in enumerate(brand.products):
+                            self.printProgressBar(database_product_index + 1, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-                                        if str(matched_shopify_product['body_html']).strip() != product_description:
-                                            update_fields['body_html'] = product_description
+                            if database_product.shopify_id:
+                                # get matched product between shopify products nad database product by shopify id
+                                # return type is integer if matched and None if not matched
+                                matched_shopify_product_index = next((i for i, shopify_product in enumerate(shopify_products) if str(database_product.shopify_id) == str(shopify_product['id'])), None)
+                                if matched_shopify_product_index != None:
+                                    # pop the matched index product from list of shopify products
+                                    matched_shopify_product = shopify_products.pop(matched_shopify_product_index)
+                                    # check if Outlet tag is not in shopify product tags
+                                    if 'Outlet' not in matched_shopify_product['tags']:
+                                        if field_to_update == 'Update Product Title and Description':
+                                            product_title = self.utils.create_product_title(brand, database_product, self.template_file_path)
+                                            product_description = self.utils.create_product_description(brand, database_product, self.template_file_path)
+                                            update_fields = {}
 
-                                        if update_fields:
-                                            update_fields['id'] = matched_shopify_product['id']
-                                            shopify_processor.update_product({'product': update_fields})
-                                    elif field_to_update == 'Update Product Images':
-                                        if len(matched_shopify_product['images']) == 0 and database_product.images_360 or database_product.image:
-                                            self.set_product_images(brand, database_product, shopify_processor)
-                                        else:
-                                            if database_product.images_360 and len(matched_shopify_product['images']) < len(database_product.images_360):
-                                                for product_image in matched_shopify_product['images']:
-                                                    shopify_processor.delete_product_image(product_image['product_id'], product_image['id'])
-                                                self.set_product_images(brand, database_product, shopify_processor)
-                                    elif field_to_update == 'Update Product Tags':
-                                        if len(matched_shopify_product['images']) == 0 or len(matched_shopify_product['images']) == 1 and 'spinimages' in matched_shopify_product['tags']:
-                                            new_tags = self.utils.remove_spin_tag(matched_shopify_product['tags'])
-                                            if new_tags:
-                                                shopify_processor.update_product({ "product": { "id": matched_shopify_product['id'], "tags": new_tags } })
-                                        else:
-                                            if len(matched_shopify_product['images']) > 1:
-                                                new_tags = self.utils.check_product_spin_tag(len(matched_shopify_product['images']), matched_shopify_product['tags'])
-                                                if new_tags: 
+                                            if str(matched_shopify_product['title']).strip() != product_title:
+                                                update_fields['title'] = product_title
+
+                                            if str(matched_shopify_product['body_html']).strip() != product_description:
+                                                update_fields['body_html'] = product_description
+
+                                            if update_fields:
+                                                update_fields['id'] = matched_shopify_product['id']
+                                                shopify_processor.update_product({'product': update_fields})
+                                        elif field_to_update == 'Update Product Images':
+                                            if len(matched_shopify_product['images']) == 0 and database_product.images_360 or database_product.image:
+                                                self.set_product_images(brand, database_product, matched_shopify_product['title'], shopify_processor)
+                                            else:
+                                                if database_product.images_360 and len(matched_shopify_product['images']) < len(database_product.images_360):
+                                                    for product_image in matched_shopify_product['images']:
+                                                        shopify_processor.delete_product_image(product_image['product_id'], product_image['id'])
+                                                    self.set_product_images(brand, database_product, matched_shopify_product['title'], shopify_processor)
+                                        elif field_to_update == 'Update Product Tags':
+                                            if len(matched_shopify_product['images']) == 0 or len(matched_shopify_product['images']) == 1 and 'spinimages' in matched_shopify_product['tags']:
+                                                new_tags = self.utils.remove_spin_tag(matched_shopify_product['tags'])
+                                                if new_tags:
                                                     shopify_processor.update_product({ "product": { "id": matched_shopify_product['id'], "tags": new_tags } })
-                else: print(f'Failed to get {products_count} products from shopify')
+                                            else:
+                                                if len(matched_shopify_product['images']) > 1:
+                                                    new_tags = self.utils.check_product_spin_tag(len(matched_shopify_product['images']), matched_shopify_product['tags'])
+                                                    if new_tags: 
+                                                        shopify_processor.update_product({ "product": { "id": matched_shopify_product['id'], "tags": new_tags } })
+                    else: print(f'Failed to get {products_count} products from shopify')
+
         except Exception as e:
             self.print_logs(f'Exception in update_product_title_and_description controller: {e}')
             if self.DEBUG: print(f'Exception in update_product_title_and_description controller: {e}')
             else: pass
 
-    # def update_product_images(self) -> None:
-    #     try:
-    #         self.template_file_path = self.utils.get_templates_folder_path(str(self.store.name).strip().title())
+    # update product metafields
+    def update_product_metafields(self) -> None:
+        try:
+            self.template_file_path = self.utils.get_templates_folder_path(str(self.store.name).strip().title())
             
-    #         shopify_processor = Shopify_Processor(self.DEBUG, self.config_file, self.logs_filename)
-    #         shopify_processor.get_store_url()
+            shopify_processor = Shopify_Processor(self.DEBUG, self.config_file, self.logs_filename)
+            shopify_processor.get_store_url()
             
-    #         print(f'Updating product images for {str(self.store.name).strip().title()}')
+            print(f'\nUpdating product metafields for {str(self.store.name).strip().title()}')
 
-    #         for brand in self.store.brands:
-    #             print(f'Brand: {brand.name}')
-    #             print(f'No. of Products in database: {len(brand.products)}')
+            for brand in self.store.brands:
+                for product_type in brand.product_types:
+                    print(f'\nBrand: {brand.name} | Product type: {product_type}')
 
-    #             products_count = shopify_processor.get_count_of_products_by_vendor(brand.name)
-    #             print(f'No. of Products in shopify: {products_count}')
+                    brand.products = self.query_processor.get_complete_products_by_brand_and_type(brand.name, product_type)
+                    print(f'No. of Products in database: {len(brand.products)}')
 
-    #             # self.printProgressBar(0, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
-    #             shopify_products = shopify_processor.get_products_by_vendor(brand.name)
+                    self.printProgressBar(0, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-    #             if products_count == len(shopify_products):
-    #                 for database_product_index, database_product in enumerate(brand.products):
-    #                     self.printProgressBar(database_product_index + 1, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
-
-    #                     if database_product.shopify_id:
-    #                         # get matched product between shopify products nad database product by shopify id
-    #                         # return type is integer if matched and None if not matched
-    #                         matched_shopify_product_index = next((i for i, shopify_product in enumerate(shopify_products) if str(database_product.shopify_id) == str(shopify_product['id'])), None)
-    #                         if matched_shopify_product_index != None:
-    #                             # pop the matched index product from list of shopify products
-    #                             matched_shopify_product = shopify_products.pop(matched_shopify_product_index)
-    #                             # check if Outlet tag is not in shopify product tags
-    #                             if 'Outlet' not in matched_shopify_product['tags']:
-                                    
-    #                                 if len(matched_shopify_product['images']) == 0 and database_product.images_360 or database_product.image:
-    #                                     self.set_product_images(brand, database_product, shopify_processor)
-    #                                 else:
-    #                                     if database_product.images_360 and len(matched_shopify_product['images']) < len(database_product.images_360):
-    #                                         for product_image in matched_shopify_product['images']:
-    #                                             shopify_processor.delete_product_image(product_image['product_id'], product_image['id'])
-    #                                         self.set_product_images(brand, database_product, shopify_processor)
-                                            
-
-    #             # else: print(f'Failed to get {products_count} products from shopify')
-    #     except Exception as e:
-    #         self.print_logs(f'Exception in update_product_images controller: {e}')
-    #         if self.DEBUG: print(f'Exception in update_product_images controller: {e}')
-    #         else: pass
-    
-    # def update_product_tags(self) -> None:
-    #     try:
-    #         self.template_file_path = self.utils.get_templates_folder_path(str(self.store.name).strip().title())
+                    for database_product_index, database_product in enumerate(brand.products):
+                        self.printProgressBar(database_product_index + 1, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
+                        shopify_metafields = shopify_processor.get_product_metafields(database_product.shopify_id)
+                        if shopify_metafields:
+                            meta_title = self.utils.create_product_meta_title(brand, database_product, self.template_file_path)
+                            meta_description = self.utils.create_product_meta_description(brand, database_product, self.template_file_path)
+                            if str(database_product.metafields.for_who).strip():
+                                self.check_metafields_value(shopify_metafields, 'for_who', database_product.metafields.for_who, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'per_chi', database_product.metafields.for_who, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.frame_color).strip():
+                                self.check_metafields_value(shopify_metafields, 'frame_color', database_product.metafields.frame_color, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'colore_della_montatura', database_product.metafields.frame_color, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.frame_material).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'frame_material', database_product.metafields.frame_material, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'materiale_della_montatura', database_product.metafields.frame_material, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.frame_shape).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'frame_shape', database_product.metafields.frame_shape, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'forma', database_product.metafields.frame_shape, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.lens_color).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'lens_color', database_product.metafields.lens_color, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'colore_della_lente', database_product.metafields.lens_color, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.lens_material).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'lens_material', database_product.metafields.lens_material, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'materiale_della_lente', database_product.metafields.lens_material, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.lens_technology).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'lens_technology', database_product.metafields.lens_technology, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'tecnologia_della_lente', database_product.metafields.lens_technology, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.size_bridge_template).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'product_size', database_product.metafields.size_bridge_template, database_product.shopify_id, shopify_processor)
+                                self.check_metafields_value(shopify_metafields, 'calibro_ponte_asta', database_product.metafields.size_bridge_template, database_product.shopify_id, shopify_processor)
+                            if str(database_product.metafields.gtin1).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'gtin1', database_product.metafields.gtin1, database_product.shopify_id, shopify_processor)
+                            if str(meta_title).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'title_tag', meta_title, database_product.shopify_id, shopify_processor)
+                            if str(meta_description).strip(): 
+                                self.check_metafields_value(shopify_metafields, 'description_tag', meta_description, database_product.shopify_id, shopify_processor)
             
-    #         shopify_processor = Shopify_Processor(self.DEBUG, self.config_file, self.logs_filename)
-    #         shopify_processor.get_store_url()
-            
-    #         print(f'Updating product images for {str(self.store.name).strip().title()}')
-
-    #         for brand in self.store.brands:
-    #             print(f'\nBrand: {brand.name}')
-    #             print(f'No. of Products in database: {len(brand.products)}')
-
-    #             products_count = shopify_processor.get_count_of_products_by_vendor(brand.name)
-    #             print(f'No. of Products in shopify: {products_count}')
-
-    #             # self.printProgressBar(0, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
-    #             shopify_products = shopify_processor.get_products_by_vendor(brand.name)
-
-    #             if products_count == len(shopify_products):
-    #                 for database_product_index, database_product in enumerate(brand.products):
-    #                     self.printProgressBar(database_product_index + 1, len(brand.products), prefix = 'Progress:', suffix = 'Complete', length = 50)
-
-    #                     if database_product.shopify_id:
-    #                         # get matched product between shopify products nad database product by shopify id
-    #                         # return type is integer if matched and None if not matched
-    #                         matched_shopify_product_index = next((i for i, shopify_product in enumerate(shopify_products) if str(database_product.shopify_id) == str(shopify_product['id'])), None)
-    #                         if matched_shopify_product_index != None:
-    #                             # pop the matched index product from list of shopify products
-    #                             matched_shopify_product = shopify_products.pop(matched_shopify_product_index)
-    #                             # check if Outlet tag is not in shopify product tags
-    #                             if 'Outlet' not in matched_shopify_product['tags']:
-                                    
-    #                                 if len(matched_shopify_product['images']) == 0 or len(matched_shopify_product['images']) == 1 and 'spinimages' in matched_shopify_product['tags']:
-    #                                     new_tags = self.utils.remove_spin_tag(matched_shopify_product['tags'])
-    #                                     if new_tags:
-    #                                         shopify_processor.update_product({ "product": { "id": matched_shopify_product['id'], "tags": new_tags } })
-    #                                 else:
-    #                                     if len(matched_shopify_product['images']) > 1:
-    #                                         new_tags = self.utils.check_product_spin_tag(len(matched_shopify_product['images']), matched_shopify_product['tags'])
-    #                                         if new_tags: 
-    #                                             shopify_processor.update_product({ "product": { "id": matched_shopify_product['id'], "tags": new_tags } })
-    #             # else: print(f'Failed to get {products_count} products from shopify')
-    #     except Exception as e:
-    #         self.print_logs(f'Exception in update_product_images controller: {e}')
-    #         if self.DEBUG: print(f'Exception in update_product_images controller: {e}')
-    #         else: pass
+        except Exception as e:
+            self.print_logs(f'Exception in update_product_metafields: {e}')
+            if self.DEBUG: print(f'Exception in update_product_metafields: {e}')
+            else: pass
     
     # check product variant and update them if needed
     def check_product_variant(self, variant: Variant, product: Product, shopify_variant: dict, shopify_processor: Shopify_Processor) -> None:
@@ -317,7 +289,7 @@ class Shopify_Updater:
         try:
             self.print_logs(f'Adding variant: {variant.sku}')
             new_variant_json = self.get_new_variant_json(len(product.variants), variant)
-            new_variant_json['position'] = len(product.variants) + 1
+            new_variant_json['position'] = len(product.variants)
             new_variant_json['product_id'] = int(product.shopify_id)
             new_variant_json = {'variant': new_variant_json}
             # inserting new variant to the shopify store
@@ -380,45 +352,74 @@ class Shopify_Updater:
             else: pass
         finally: return new_variant_json
     
-    def set_metafields_for_new_variant(self, database_product: Product, shopify_product: dict, shopify_processor: Shopify_Processor) -> None:
+    def check_metafields_value(self, shopify_metafields: list[dict], key: str, value: str, product_id: str, shopify_processor: Shopify_Processor):
         try:
-            product_size_metafield_list, gtin1_metafield_list = [], []
-            product_size_metafield, gtin1_metafield = '', ''
             
-            for shopify_variant in shopify_product['variants']:
-                
-                for database_variant in database_product.variants:
-                    
-                    if str(database_variant.shopify_id).strip() == str(shopify_variant['id']).strip():
-                        if database_variant.barcode_or_gtin: 
-                            gtin1_metafield_list.append(database_variant.barcode_or_gtin)
-                        if database_variant.size:
-                            product_size_metafield_list.append(database_variant.size)
+            shopify_matched_metafield = next((shopify_metafield for shopify_metafield in shopify_metafields['metafields'] if shopify_metafield['key'] == key), None)
+            if shopify_matched_metafield:
+                if str(shopify_matched_metafield['value']).strip() != str(value).strip():
+                    json_value = {"metafield": {"id": shopify_matched_metafield['id'], "value": str(value).strip(), "type": "single_line_text_field"}}
+                    if not shopify_processor.update_metafield(json_value): self.print_logs(f'Failed to update {json_value} for product: {product_id}')
+            else:
+                json_value = self.utils.get_new_metafield_by_key(key, value, product_id)
+                if json_value: shopify_processor.set_metafields_for_product(product_id, json_value)
+        except Exception as e:
+            self.print_logs(f'Exception in check_metafields_value: {e}')
+            if self.DEBUG: print(f'Exception in check_metafields_value: {e}')
+            else: pass
 
-            if gtin1_metafield_list: gtin1_metafield = ', '.join(gtin1_metafield_list)
-            if product_size_metafield_list: product_size_metafield = ', '.join(product_size_metafield_list)
+    def set_metafields_for_new_variant(self, database_product: Product, shopify_variants: list[dict], shopify_processor: Shopify_Processor) -> None:
+        try:
+            # product_size_metafield, gtin1_metafield = self.utils.create_productsize_gtin1_metafields(database_product, shopify_variants)
 
-            if product_size_metafield or gtin1_metafield:
+            if database_product.metafields.size_bridge_template or database_product.metafields.gtin1:
                 shopify_metafields = shopify_processor.get_product_metafields(database_product.shopify_id)
                 if shopify_metafields:
-                    for shopify_metafield in shopify_metafields['metafields']:
-                        if product_size_metafield:
-                            if shopify_metafield['key'] == 'product_size':
-                                if str(shopify_metafield['value']).strip() != str(product_size_metafield).strip():
-                                    json_value = {"metafield": {"id": shopify_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
-                                    if not shopify_processor.update_metafield(json_value):
-                                        self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
-                            elif shopify_metafield['key'] == 'calibro_ponte_asta':
-                                if str(shopify_metafield['value']).strip() != str(product_size_metafield).strip():
-                                    json_value = {"metafield": {"id": shopify_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
-                                    if not shopify_processor.update_metafield(json_value):
-                                        self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
-                        if gtin1_metafield:
-                            if shopify_metafield['key'] == 'gtin1':
-                                if str(shopify_metafield['value']).strip() != str(gtin1_metafield).strip():
-                                    json_value = {"metafield": {"id": shopify_metafield['id'], "value": str(gtin1_metafield).strip(), "type": "single_line_text_field"}}
-                                    if not shopify_processor.update_metafield(json_value):
-                                        self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
+                    if database_product.metafields.size_bridge_template:
+                        self.check_metafields_value(shopify_metafields, 'product_size', database_product.metafields.size_bridge_template, database_product.shopify_id, shopify_processor)
+                        self.check_metafields_value(shopify_metafields, 'calibro_ponte_asta', database_product.metafields.size_bridge_template, database_product.shopify_id, shopify_processor)
+                        # shopify_matched_metafield = next((shopify_metafield for shopify_metafield in shopify_metafields['metafields'] if shopify_metafield['key'] == 'product_size'), None)
+                        # # checking for product_size metafield
+                        # if shopify_matched_metafield:
+                            
+                        #     if str(shopify_matched_metafield['value']).strip() != str(database_product.metafields.size_bridge_template).strip():
+                        #         json_value = {"metafield": {"id": shopify_matched_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
+                        #         if not shopify_processor.update_metafield(json_value): self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
+                        # # checking for calibro_ponte_asta metafield
+                        # shopify_matched_metafield = next((shopify_metafield for shopify_metafield in shopify_metafields['metafields'] if shopify_metafield['key'] == 'calibro_ponte_asta'), None)
+                        # if shopify_matched_metafield:
+                        #     if str(shopify_matched_metafield['value']).strip() != str(database_product.metafields.size_bridge_template).strip():
+                        #             json_value = {"metafield": {"id": shopify_matched_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
+                        #             if not shopify_processor.update_metafield(json_value): self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
+                    if database_product.metafields.gtin1:
+                        self.check_metafields_value(shopify_metafields, 'gtin1', database_product.metafields.gtin1, database_product.shopify_id, shopify_processor)
+                        # # checking for gtin1 metafield
+                        # shopify_matched_metafield = next((shopify_metafield for shopify_metafield in shopify_metafields['metafields'] if shopify_metafield['key'] == 'gtin1'), None)
+                        # if shopify_matched_metafield:
+                        #     if str(shopify_matched_metafield['value']).strip() != str(product_size_metafield).strip():
+                        #             json_value = {"metafield": {"id": shopify_matched_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
+                        #             if not shopify_processor.update_metafield(json_value): self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
+                    
+                    
+                    # for shopify_metafield in shopify_metafields['metafields']:
+                    #     if product_size_metafield:
+                            
+                    #         if shopify_metafield['key'] == 'product_size':
+                    #             if str(shopify_metafield['value']).strip() != str(product_size_metafield).strip():
+                    #                 json_value = {"metafield": {"id": shopify_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
+                    #                 if not shopify_processor.update_metafield(json_value):
+                    #                     self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
+                    #         elif shopify_metafield['key'] == 'calibro_ponte_asta':
+                    #             if str(shopify_metafield['value']).strip() != str(product_size_metafield).strip():
+                    #                 json_value = {"metafield": {"id": shopify_metafield['id'], "value": str(product_size_metafield).strip(), "type": "single_line_text_field"}}
+                    #                 if not shopify_processor.update_metafield(json_value):
+                    #                     self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
+                    #     if gtin1_metafield:
+                    #         if shopify_metafield['key'] == 'gtin1':
+                    #             if str(shopify_metafield['value']).strip() != str(gtin1_metafield).strip():
+                    #                 json_value = {"metafield": {"id": shopify_metafield['id'], "value": str(gtin1_metafield).strip(), "type": "single_line_text_field"}}
+                    #                 if not shopify_processor.update_metafield(json_value):
+                    #                     self.print_logs(f'Failed to update {json_value} for product: {database_product.id}')
 
         except Exception as e: 
             self.print_logs(f'Exception in set_metafields_for_new_variant: {e}')
@@ -460,9 +461,11 @@ class Shopify_Updater:
                         shopify_processor.set_metafields_for_product(product.shopify_id, new_metafield)
 
                     for shopify_variant in json_data['product']['variants']:
-                        self.new_products.append([product_title, product.brand, product.type, shopify_variant['sku'], shopify_variant['price'], shopify_variant['inventory_quantity']])
+                        
                         for variant in product.variants:
                             if str(shopify_variant['sku']).strip() == str(variant.sku).strip():
+                                new_entry = [product_title, product.brand, product.type, shopify_variant['sku'], shopify_variant['price'], variant.inventory_quantity]
+                                if new_entry not in self.new_products: self.new_products.append(new_entry)
                                 # get shopify id from inserted variant response
                                 variant.shopify_id = str(shopify_variant['id']).strip()
                                 # update shopify id to the database against variant id
@@ -477,7 +480,7 @@ class Shopify_Updater:
                                 shopify_processor.set_country_code(variant.inventory_item_id)
                     
                     self.set_product_options(product, json_data['product']['options'], shopify_processor)
-                    self.set_product_images(brand, product, shopify_processor)
+                    self.set_product_images(brand, product, product_title, shopify_processor)
                     # self.set_image_360_tag(', '.join(tags), product.shopify_id, shopify_processor)
                     json_product = shopify_processor.get_product_by_id(product.shopify_id)
                     if json_product:
@@ -506,11 +509,12 @@ class Shopify_Updater:
             else: pass
 
     # set product images if there is no image
-    def set_product_images(self, brand: Brand, product: Product, shopify_processor: Shopify_Processor) -> None:
+    def set_product_images(self, brand: Brand, product: Product, product_title: str, shopify_processor: Shopify_Processor) -> None:
         try:
             if product.image or product.images_360:
                 # create image description for product
                 image_description = self.utils.create_product_image_description(brand, product, self.template_file_path)
+                if not image_description: image_description = product_title
                 if product.images_360:
                     # adding 360 images to product
                     self.print_logs(f'Adding product images for {product.id}')
@@ -521,21 +525,6 @@ class Shopify_Updater:
             if self.DEBUG: print(f'Exception in set_product_images: {e}')
             else: pass 
 
-    # set product images if there is no image
-    # def set_image_360_tag(self, tags: str, product_shopify_id: str, shopify_processor: Shopify_Processor) -> None:
-    #     try:
-    #         json_product = shopify_processor.get_product_by_id(product_shopify_id)
-    #         if json_product:
-    #             no_of_images = len(json_product['product']['images'])
-    #             tags = json_product['product']['tags']
-    #             tags += f', spinimages={no_of_images}'
-    #             tags = str(tags).strip()
-    #             shopify_processor.update_product({ "product": { "id": product_shopify_id, "tags": tags } })
-    #     except Exception as e: 
-    #             self.print_logs(f'Exception in set_product_images: {e}')
-    #             if self.DEBUG: print(f'Exception in set_product_images: {e}')
-    #             else: pass 
-    
     # get new product json for insertion in shopify
     def get_new_product_json(self, product_title: str, product_description: str, brand_name: str, product_type: str, tags: list[str], product_variants: list[dict],template_suffix: str) -> dict:
         new_product_json = {}
