@@ -186,7 +186,7 @@ class Controller:
     def create_excel_file(self, shopify_obj: Shopify_Updater):
         try:
             data = []
-            path = 'C:/Users/muham/Sync/Looker Online/Results/'
+            path = ''
             filename = f'{path}{self.store.name} {datetime.now().strftime("%d-%m-%Y")} Results.xlsx'
 
             data.append( 

@@ -14,12 +14,7 @@ class Shopify_Processor:
         self.session = requests.session()
         self.location_id: str = ''
         self.logs_filename = logs_filename
-        self.headers = {
-            'User-Agent': 'PostmanRuntime/7.31.1',
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive'
-        }
+        self.headers = {'Accept': 'application/json'}
         pass
 
     # get shopify store id
@@ -520,3 +515,10 @@ class Shopify_Processor:
             if self.DEBUG: print(f'Exception in update_product_options: {e}')
             self.print_logs(f'Exception in update_product_options: {e}')
         finally: return update_flag
+
+    # print logs to the log file
+    def print_logs(self, log: str):
+        try:
+            with open(self.logs_filename, 'a') as f:
+                f.write(f'\n{log}')
+        except: pass
