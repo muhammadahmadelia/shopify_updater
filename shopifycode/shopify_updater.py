@@ -142,7 +142,7 @@ class Shopify_Updater:
 
                                             if str(matched_shopify_product['body_html']).strip() != product_description:
                                                 update_fields['body_html'] = product_description
-
+                                            
                                             if update_fields:
                                                 update_fields['id'] = matched_shopify_product['id']
                                                 shopify_processor.update_product({'product': update_fields})
