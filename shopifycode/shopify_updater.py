@@ -148,9 +148,11 @@ class Shopify_Updater:
                                                 shopify_processor.update_product({'product': update_fields})
                                         elif field_to_update == 'Update Product Images':
                                             if len(matched_shopify_product['images']) == 0 and database_product.images_360 or database_product.image:
+                                                self.print_logs(f"Setting images for {matched_shopify_product['title']} images: 0")
                                                 self.set_product_images(brand, database_product, matched_shopify_product['title'], shopify_processor)
                                             else:
                                                 if database_product.images_360 and len(matched_shopify_product['images']) < len(database_product.images_360):
+                                                    self.print_logs(f"Setting images for {matched_shopify_product['title']} images on shopify: {len(matched_shopify_product['images'])} In database: {len(database_product.images_360)}")
                                                     for product_image in matched_shopify_product['images']:
                                                         shopify_processor.delete_product_image(product_image['product_id'], product_image['id'])
                                                     self.set_product_images(brand, database_product, matched_shopify_product['title'], shopify_processor)
