@@ -155,7 +155,7 @@ class Shopify_Processor:
                     else: 
                         sleep(1)
                         counter += 1
-                        if counter == 10: 
+                        if counter == 4: 
                             self.print_logs(f'Failed to add image for product: {product_id} {response.text}')
                             break
                 except requests.exceptions.ConnectionError: sleep(0.5)
